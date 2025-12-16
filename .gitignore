@@ -1,0 +1,8 @@
+__pycache__/
+.vscode/
+corpus/
+corpus_1/
+corpus_hybrid_bs4/
+data/
+docs/
+vector_db_langchain/
