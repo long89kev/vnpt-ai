@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test outputs
+output.csv
+val.csv
+test.csv
+stem_val.csv
+stem_test.csv
+test_stem.csv
+
+# Logs
+*.log
+stem_batch_reasoning_log.txt
+stem_verify_full_log.txt
+
+# Analysis files
+analyze_*.py
+calculate_*.py
+check_system.py
+test_*.py
+final_system_check.py
+
+# Documentation
+CHECKLIST.md
+OPTIMIZATION_PLAN.md
+STREAMING_BATCH.md
+SYSTEM_DOCS.md
+QA.txt
+text.txt
+promp_fallback.txt
+
+# Data files (exclude large test files)
+classification_comparison_report.json
+
+# Keep only necessary data and corpus
+# data/ will be mounted, corpus/ is needed
+# vector_db_langchain/ is needed
