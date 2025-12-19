@@ -73,8 +73,8 @@ def classify_questions_with_llm(questions_batch):
         results = {}
         for i, item in enumerate(questions_batch, 1):
             domain = classifications.get(str(i), "MULTIDOMAIN")
-            # Validate domain
-            valid_domains = ["RAG", "STEM", "PRECISION_CRITICAL", "COMPULSORY", "MULTIDOMAIN"]
+            # Validate domain (RAG not included - already filtered)
+            valid_domains = ["STEM", "PRECISION_CRITICAL", "COMPULSORY", "MULTIDOMAIN"]
             if domain not in valid_domains:
                 domain = "MULTIDOMAIN"
             results[item['qid']] = domain

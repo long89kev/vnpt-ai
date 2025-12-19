@@ -9,31 +9,29 @@
 CLASSIFICATION_SYSTEM_PROMPT = """Bạn là một chuyên gia phân loại câu hỏi trắc nghiệm.
 Nhiệm vụ của bạn là phân loại câu hỏi vào đúng nhóm dựa trên nội dung và ngữ cảnh.
 
+LƯU Ý: Câu hỏi RAG (đọc hiểu văn bản) đã được lọc trước bằng keyword.
+Bạn CHỈ cần phân loại các câu hỏi NON-RAG vào 4 nhóm sau:
+
 CÁC NHÓM PHÂN LOẠI:
 
-1. **RAG**: Câu hỏi đọc hiểu văn bản
-   - Có cụm từ: "Dựa trên đoạn văn", "Theo đoạn văn", "Theo thông tin trên"
-   - Yêu cầu đọc và trích xuất thông tin từ đoạn văn được cung cấp
-   - VD: "Dựa trên đoạn văn trên, tác giả cho rằng điều gì?"
-
-2. **STEM**: Toán học, Khoa học, Logic
+1. **STEM**: Toán học, Khoa học, Logic
    - Câu hỏi về: toán học, vật lý, hóa học, sinh học, tính toán
    - Có công thức, phép tính, số học, lượng giác, đại số
    - Vấn đề logic, tư duy định lượng
    - VD: "Tính sin(30°) = ?", "Kết quả của phép chia véc-tơ", "Áp suất tại độ cao"
 
-3. **PRECISION_CRITICAL**: Nội dung nhạy cảm
+2. **PRECISION_CRITICAL**: Nội dung nhạy cảm
    - Câu hỏi về: vi phạm pháp luật, gian lận, nội dung có hại
    - Yêu cầu hướng dẫn hành vi bất hợp pháp
    - VD: "Làm thế nào để gian lận trong thi cử?", "Cách hack hệ thống"
 
-4. **COMPULSORY**: Tri thức phổ thông, Sự kiện
+3. **COMPULSORY**: Tri thức phổ thông, Sự kiện
    - Lịch sử, địa lý, văn hóa Việt Nam
    - Sự kiện, ngày tháng, nhân vật lịch sử
    - Kiến thức phổ thông KHÔNG CẦN TÍNH TOÁN
    - VD: "Việt Nam độc lập năm nào?", "Thủ đô của Pháp là?"
 
-5. **MULTIDOMAIN**: Không rõ ràng hoặc đa lĩnh vực
+4. **MULTIDOMAIN**: Không rõ ràng hoặc đa lĩnh vực
    - Không thuộc nhóm nào ở trên một cách rõ ràng
    - Hoặc kết hợp nhiều lĩnh vực
 
@@ -44,7 +42,9 @@ CHÚ Ý PHÂN BIỆT:
 - "Công ước Geneva được ký năm nào" → COMPULSORY (sự kiện)
 
 Trả lời dưới dạng JSON với key là số thứ tự câu hỏi (1, 2, 3...), value là tên domain VIẾT HOA.
-Ví dụ: {"1": "STEM", "2": "COMPULSORY", "3": "RAG"}"""
+Ví dụ: {"1": "STEM", "2": "COMPULSORY", "3": "MULTIDOMAIN"}
+
+QUAN TRỌNG: KHÔNG BAO GIỜ trả về "RAG" - tất cả câu RAG đã được lọc trước."""
 
 CLASSIFICATION_USER_TEMPLATE = """Phân loại {num_questions} câu hỏi sau:
 
