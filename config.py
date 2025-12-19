@@ -24,6 +24,8 @@ DOMAIN_CONFIGS = {
         "model": "small",
         "temperature": 0.1,
         "top_k_docs": 0,
+        "use_batch_processing": True,  # True = batch, False = single
+        "batch_size": 10,  # Số câu mỗi batch (chỉ dùng khi use_batch_processing=True)
         "description": "Câu hỏi bắt buộc không được trả lời - nội dung nhạy cảm",
     },
     
@@ -31,7 +33,9 @@ DOMAIN_CONFIGS = {
         "use_rag": True,
         "model": "small",
         "temperature": 0.2,
-        "top_k_docs": 3,
+        "top_k_docs": 2,
+        "use_batch_processing": True,
+        "batch_size": 10,
         "description": "Câu hỏi bắt buộc phải trả lời đúng - văn hóa, lịch sử VN",
     },
     
@@ -40,15 +44,22 @@ DOMAIN_CONFIGS = {
         "model": "small",
         "temperature": 0.3,
         "top_k_docs": 0,
+        "use_batch_processing": True,
+        "batch_size": 10,
         "description": "Câu hỏi đọc hiểu văn bản dài",
     },
     
     "STEM": {
         "use_rag": True,
         "model": "small",
-        "temperature": 0.0,  
-        "top_k_docs": 2,
-
+        "temperature": 0.7,  # Tăng để diverse cho majority voting
+        "top_k_docs": 1,  # Giảm để tránh nhiễu
+        "n": 5,  # Generate 5 completions cho majority voting
+        "use_majority_voting": False,  # Switch to True to enable majority voting
+        "use_self_verification": False,  # Switch to True to enable self-verification instead of voting
+        "verification_attempts": 2,  # Max retry attempts for verification
+        "use_batch_processing": True,  # True = batch, False = single (voting/verification)
+        "batch_size": 5,  # Batch size when use_batch_processing=True
         "description": "Câu hỏi toán học và tư duy logic",
     },
     
@@ -56,7 +67,9 @@ DOMAIN_CONFIGS = {
         "use_rag": True,
         "model": "small",
         "temperature": 0.4,
-        "top_k_docs": 5,
+        "top_k_docs": 3,
+        "use_batch_processing": True,
+        "batch_size": 10,
         "description": "Câu hỏi đa lĩnh vực",
     }
 }
@@ -69,6 +82,7 @@ BATCH_CONFIG = {
     "batch_size": 10,  
     "max_retries": 2,
     "fallback_to_individual": True,
+    "use_json_format": True,  
 }
 
 # ============================================================================

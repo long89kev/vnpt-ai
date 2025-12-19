@@ -24,22 +24,34 @@ Chỉ trả lời duy nhất MỘT chữ cái in hoa (A, B, C, D...). Không gi�
     "stem": """Bạn là một chuyên gia toán học và khoa học với khả năng tư duy logic cao.
 Nhiệm vụ của bạn là giải quyết các bài toán, công thức toán học, và các vấn đề tư duy logic.
 
-PHƯƠNG PHÁP GIẢI:
+PHƯƠNG PHÁP GIẢI 4 BƯỚC:
 1. ĐỌC KỸ đề bài và xác định những gì được cho
 2. XÁC ĐỊNH công thức hoặc phương pháp cần áp dụng
 3. TÍNH TOÁN từng bước một cách cẩn thận
 4. KIỂM TRA lại kết quả trước khi chọn đáp án
 
+FORMAT TRẢ LỜI BẮT BUỘC:
+BƯỚC 1: [Phân tích đề bài]
+BƯỚC 2: [Xác định công thức]
+BƯỚC 3: [Tính toán chi tiết]
+BƯỚC 4: [Kiểm tra và kết luận]
+
+===ĐÁP ÁN CUỐI CÙNG===
+[CHỈ GHI 1 CHỮ CÁI A/B/C/D/E/F/G/H/I/J]
+
 VÍ DỤ:
 Bài: Tính 2 + 2 × 3 = ?
 Choices: A. 8  B. 10  C. 12  D. 16
-Tư duy: Theo thứ tự ưu tiên toán tử: 2 × 3 = 6, sau đó 2 + 6 = 8
-Trả lời: A
 
-QUAN TRỌNG: 
-- CHỈ trả lời KÝ HIỆU (A, B, C, D, E, F...), KHÔNG trả số hay nội dung
-- KHÔNG giải thích, KHÔNG viết "Đáp án A", CHỈ viết "A"
-- Nếu có nhiều choices (E, F, G...) thì vẫn chỉ trả ký hiệu tương ứng""",
+BƯỚC 1: Đề cho biểu thức 2 + 2 × 3, cần tính kết quả
+BƯỚC 2: Áp dụng quy tắc ưu tiên: nhân/chia trước, cộng/trừ sau
+BƯỚC 3: Tính 2 × 3 = 6, sau đó 2 + 6 = 8
+BƯỚC 4: So sánh với choices → A. 8 khớp với kết quả
+
+===ĐÁP ÁN CUỐI CÙNG===
+A
+
+CHÚ Ý: Đáp án phải ở cuối cùng sau dấu ===, chỉ ghi 1 chữ cái duy nhất.""",
 
     "multidomain": """Bạn là một trợ lý AI đa năng với kiến thức rộng về nhiều lĩnh vực.
 Nhiệm vụ của bạn là trả lời các câu hỏi liên quan đến nhiều chủ đề khác nhau.
@@ -163,18 +175,48 @@ KHÔNG sử dụng kiến thức bên ngoài. CHỈ dựa vào thông tin trong 
 Trả lời dưới dạng JSON: {"1": "A", "2": "B", ...}. Không giải thích.""",
     
     "stem": """Bạn là một chuyên gia toán học và khoa học với khả năng tư duy logic cao.
-Nhiệm vụ của bạn là giải quyết các bài toán, công thức toán học và vấn đề logic.
+Nhiệm vụ của bạn là giải quyết nhiều bài toán, công thức toán học và vấn đề logic.
 
-PHƯƠNG PHÁP: Đọc kỹ → Chọn công thức → Tính toán từng bước → Kiểm tra → Chọn đáp án
+PHƯƠNG PHÁP GIẢI 4 BƯỚC CHO MỖI CÂU:
+1. ĐỌC KỸ đề bài và xác định những gì được cho
+2. XÁC ĐỊNH công thức hoặc phương pháp cần áp dụng
+3. TÍNH TOÁN từng bước một cách cẩn thận
+4. KIỂM TRA lại kết quả trước khi chọn đáp án
 
-QUAN TRỌNG - FORMAT:
-- Trả lời dưới dạng JSON: {"1": "A", "2": "B", "3": "F", ...}
-- CHỈ viết KÝ HIỆU (A, B, C, D, E, F, G, H, I, J...)
-- KHÔNG viết số, KHÔNG viết nội dung đáp án
-- VÍ DỤ SAI: {"1": "15 kPa"}, {"1": "Đáp án A"}
-- VÍ DỤ ĐÚNG: {"1": "A"}, {"2": "F"}
+FORMAT TRẢ LỜI BẮT BUỘC:
+Với mỗi câu hỏi, hãy:
+1. Viết "===CÂU [số]===" để bắt đầu
+2. Giải chi tiết theo 4 bước
+3. Viết "===ĐÁP ÁN CÂU [số]===" và CHỈ GHI 1 CHỮ CÁI (A/B/C/D/E/F/G/H/I/J)
 
-Không giải thích. Chỉ trả JSON.""",
+Sau khi giải xong TẤT CẢ các câu, viết:
+===DANH SÁCH ĐÁP ÁN===
+{"1": "A", "2": "B", "3": "C", ...}
+
+VÍ DỤ:
+===CÂU 1===
+BƯỚC 1: Đề cho biểu thức 2 + 2 × 3, cần tính kết quả
+BƯỚC 2: Áp dụng quy tắc ưu tiên: nhân/chia trước, cộng/trừ sau
+BƯỚC 3: Tính 2 × 3 = 6, sau đó 2 + 6 = 8
+BƯỚC 4: So sánh với choices → A. 8 khớp với kết quả
+===ĐÁP ÁN CÂU 1===
+A
+
+===CÂU 2===
+BƯỚC 1: ...
+BƯỚC 2: ...
+BƯỚC 3: ...
+BƯỚC 4: ...
+===ĐÁP ÁN CÂU 2===
+B
+
+===DANH SÁCH ĐÁP ÁN===
+{"1": "A", "2": "B"}
+
+CHÚ Ý: 
+- Mỗi câu PHẢI có full reasoning 4 bước
+- Đáp án từng câu sau dấu ===ĐÁP ÁN CÂU===
+- Cuối cùng PHẢI có JSON tổng hợp sau ===DANH SÁCH ĐÁP ÁN===""",
     
     "multidomain": """Bạn là một trợ lý AI đa năng với kiến thức rộng về nhiều lĩnh vực.
 Nhiệm vụ của bạn là trả lời các câu hỏi liên quan đến nhiều chủ đề khác nhau.
@@ -194,6 +236,34 @@ Dưới đây là danh sách {num_questions} câu hỏi trắc nghiệm. Hãy tr
 [Yêu cầu]
 Trả lời dưới dạng JSON object hợp lệ, không có markdown formatting (như ```json ... ```).
 Ví dụ: {{"1": "A", "2": "B"}}
+"""
+
+# STEM batch requires full reasoning
+BATCH_USER_PROMPT_TEMPLATE_STEM = """
+Dưới đây là {num_questions} bài toán trắc nghiệm. Giải CHI TIẾT từng bài theo format yêu cầu.
+
+{questions_content}
+
+[Yêu cầu]
+1. Với MỖI câu: Viết "===CÂU [số]===" → Giải 4 bước → "===ĐÁP ÁN CÂU [số]===" + 1 chữ cái
+2. Sau khi giải xong TẤT CẢ: Viết "===DANH SÁCH ĐÁP ÁN===" + JSON tổng hợp
+
+VÍ DỤ OUTPUT:
+===CÂU 1===
+BƯỚC 1: ...
+BƯỚC 2: ...
+BƯỚC 3: ...
+BƯỚC 4: ...
+===ĐÁP ÁN CÂU 1===
+A
+
+===CÂU 2===
+...
+===ĐÁP ÁN CÂU 2===
+B
+
+===DANH SÁCH ĐÁP ÁN===
+{{"1": "A", "2": "B"}}
 """
 
 # ============================================================================
@@ -234,10 +304,11 @@ def construct_prompt(question, choices, context="", domain="multidomain"):
         choices=choices_str
     )
 
-def construct_batch_prompt(items):
+def construct_batch_prompt(items, domain="multidomain"):
     """
     Construct the prompt for a batch of questions (same domain).
     items: list of dicts, each containing 'question', 'choices', optional 'context'
+    domain: domain name to select appropriate template
     """
     questions_content = []
     for i, item in enumerate(items, 1):
@@ -257,7 +328,13 @@ def construct_batch_prompt(items):
 """
         questions_content.append(content)
     
-    return BATCH_USER_PROMPT_TEMPLATE.format(
+    # Select template based on domain
+    if domain.upper() == "STEM":
+        template = BATCH_USER_PROMPT_TEMPLATE_STEM
+    else:
+        template = BATCH_USER_PROMPT_TEMPLATE
+        
+    return template.format(
         num_questions=len(items),
         questions_content="\n----------------\n".join(questions_content)
     )

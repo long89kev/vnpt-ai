@@ -32,7 +32,15 @@ class QuestionRouter:
             'khối lượng', 'thể tích', 'diện tích', 'chu vi', 'bán kính',
             'đạo hàm', 'tích phân', 'logarit', 'lũy thừa', 'căn bậc',
             'xác suất', 'thống kê', 'ma trận', 'vector', 'hàm số',
-            'định lý', 'công thức', 'biểu thức', 'tỉ lệ', 'phần trăm'
+            'định lý', 'công thức', 'biểu thức', 'tỉ lệ', 'phần trăm',
+            'véc-tơ', 'lực', 'áp suất', 'nhiệt độ', 'năng lượng',
+            'động lượng', 'momen', 'trọng lực', 'ma sát', 'gia tốc'
+        ]
+        
+        # Trigonometry terms for answer choices
+        self.trig_terms = [
+            'tangent', 'sine', 'cosine', 'cotangent', 'secant', 'cosecant',
+            'arcsin', 'arccos', 'arctan', 'arcsec', 'arccsc', 'arccot'
         ]
         
     def classify_question(self, question_text: str, choices: list) -> Tuple[str, float]:
@@ -49,7 +57,7 @@ class QuestionRouter:
             return "PRECISION_CRITICAL", 0.9
         
         # 3. Check for STEM - math and logical reasoning
-        if self._is_stem(question_text):
+        if self._is_stem(question_text, choices):
             return "STEM", 0.85
         
         # 4. Check for Compulsory - specific factual questions
@@ -80,7 +88,7 @@ class QuestionRouter:
         
         return has_harmful_intent and has_rejection_choice
     
-    def _is_stem(self, question_text: str) -> bool:
+    def _is_stem(self, question_text: str, choices: list = None) -> bool:
         """
         Detect math and logical reasoning questions
         """
@@ -95,7 +103,18 @@ class QuestionRouter:
             if indicator.lower() in question_lower or re.search(indicator, question_text)
         )
         
-        return stem_count >= 2
+        # Check for trigonometry terms in choices (strong indicator)
+        if choices:
+            choices_text = ' '.join(choices).lower()
+            trig_count = sum(
+                1 for term in self.trig_terms
+                if term.lower() in choices_text
+            )
+            if trig_count >= 3:  # 3+ trig terms in choices = definitely STEM
+                return True
+        
+        # Lower threshold to 1 (single strong indicator is enough)
+        return stem_count >= 1
     
     def _is_compulsory(self, question_text: str) -> bool:
         """
