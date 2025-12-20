@@ -1,36 +1,35 @@
 # BASE IMAGE
-# Lưu ý: Sử dụng đúng phiên bản CUDA 12.2 để khớp với Server BTC
-FROM nvidia/cuda:12.2.0-devel-ubuntu20.04
+# Sử dụng Python 3.9 slim để giảm kích thước image (codebase không dùng GPU)
+FROM python:3.9-slim
 
 # Prevent interactive prompts during installation
 ENV DEBIAN_FRONTEND=noninteractive
 
 # SYSTEM DEPENDENCIES
-# Cài đặt Python, Pip và các gói hệ thống cần thiết
+# Cài đặt các gói hệ thống cần thiết
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
     git \
     wget \
     && rm -rf /var/lib/apt/lists/*
-
-# Link python3 thành python nếu cần
-RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # PROJECT SETUP
 # Thiết lập thư mục làm việc
 WORKDIR /code
 
-# Copy toàn bộ source code vào trong container
-COPY . /code
+# INSTALL LIBRARIES (OPTIMIZE: Copy requirements first for better caching)
+# Copy requirements.txt trước để cache layer install libraries
+COPY requirements.txt /code/
 
-# INSTALL LIBRARIES
 # Nâng cấp pip và cài đặt các thư viện từ requirements.txt
 RUN pip3 install --no-cache-dir --upgrade pip && \
     pip3 install --no-cache-dir -r requirements.txt
 
-# Download spacy model if needed
+# Download spacy model (cache this layer)
 RUN python3 -m spacy download vi_core_news_lg || true
+
+# Copy source code AFTER installing dependencies
+# Khi chỉ sửa code, layer này rebuild nhưng không phải reinstall libraries
+COPY . /code
 
 # EXECUTION
 # Lệnh chạy mặc định khi container khởi động

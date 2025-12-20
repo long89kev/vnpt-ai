@@ -4,12 +4,14 @@ rank_bm25
 requests
 pandas
 tqdm
-numpy
+numpy<2.0.0
 scikit-learn
 
 # NLP libraries
-spacy
+spacy<3.8,>=3.5
 wikipedia-api
+underthesea
+beautifulsoup4
 
 # LangChain ecosystem
 langchain

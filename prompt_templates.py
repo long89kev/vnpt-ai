@@ -46,7 +46,7 @@ Ví dụ: {"1": "STEM", "2": "COMPULSORY", "3": "MULTIDOMAIN"}
 
 QUAN TRỌNG: KHÔNG BAO GIỜ trả về "RAG" - tất cả câu RAG đã được lọc trước."""
 
-CLASSIFICATION_USER_TEMPLATE = """Phân loại {num_questions} câu hỏi sau:
+CLASSIFICATION_USER_TEMPLATE = """Phân loại {num_questions} câu hỏi sau (kèm các đáp án để tham khảo):
 
 {questions_list}
 
