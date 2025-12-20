@@ -111,14 +111,32 @@ def classify_questions_with_llm(questions_batch):
     if not questions_batch:
         return {}
     
-    # Format questions for prompt
+    # Format questions for prompt (with choices)
     questions_list = []
     for i, item in enumerate(questions_batch, 1):
         question_text = item['question']
         # Truncate very long questions to save tokens
         if len(question_text) > 500:
             question_text = question_text[:500] + "..."
-        questions_list.append(f"Câu {i}: {question_text}")
+        
+        # Add choices if available
+        choices_text = ""
+        if 'choices' in item and item['choices']:
+            choices_formatted = []
+            labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
+            for idx, choice in enumerate(item['choices']):
+                # Handle both dict format {'label': 'A', 'text': '...'} and string format
+                if isinstance(choice, dict):
+                    label = choice.get('label', labels[idx])
+                    text = choice.get('text', '')
+                    choices_formatted.append(f"{label}. {text}")
+                else:
+                    # Production format: array of strings
+                    choices_formatted.append(f"{labels[idx]}. {choice}")
+            choices_text = "\n".join(choices_formatted)
+            questions_list.append(f"Câu {i}: {question_text}\n{choices_text}")
+        else:
+            questions_list.append(f"Câu {i}: {question_text}")
     
     questions_str = "\n\n".join(questions_list)
     
@@ -168,15 +186,24 @@ def classify_questions_with_llm(questions_batch):
         return results
 
 
-def solve_question(item):
+def solve_question(item, pre_classified_domain=None):
     """
     Solve a single question with domain-aware routing
+    
+    Args:
+        item: Question item dict
+        pre_classified_domain: Domain already classified by LLM (skip re-classification)
     """
     question_text = item['question']
     choices = item['choices']
     
-    # 1. Classify question into domain
-    domain, confidence = router.classify_question(question_text, choices)
+    # 1. Use pre-classified domain or classify with router
+    if pre_classified_domain:
+        domain = pre_classified_domain
+        confidence = 1.0  # High confidence for LLM classification
+    else:
+        domain, confidence = router.classify_question(question_text, choices)
+    
     strategy = router.get_strategy_config(domain)
     
     # Debug: print STEM strategy
@@ -721,23 +748,49 @@ def predict_with_timing(test_data, output_submission, output_timing):
             
             # Step 1: Quick RAG detection with keywords
             if is_rag_question(question_text):
-                # RAG question - add directly to RAG buffer
+                # RAG question detected
                 domain = "RAG"
-                domain_buffers['RAG'].append(item)
                 rag_detected += 1
                 
                 strategy = router.get_strategy_config(domain)
                 use_batch = strategy.get('use_batch_processing', True)
                 batch_size = strategy.get('batch_size', 10)
                 
-                # Process RAG buffer if full
-                if use_batch and len(domain_buffers['RAG']) >= batch_size:
-                    print(f"[{idx}/{total_items}] RAG buffer full ({len(domain_buffers['RAG'])}/{batch_size})")
-                    batch_to_process = domain_buffers['RAG'][:batch_size]
-                    domain_buffers['RAG'] = domain_buffers['RAG'][batch_size:]
-                    process_batch('RAG', batch_to_process)
+                if use_batch:
+                    # Batch mode: add to buffer and process when full
+                    domain_buffers['RAG'].append(item)
+                    
+                    if len(domain_buffers['RAG']) >= batch_size:
+                        print(f"[{idx}/{total_items}] RAG buffer full ({len(domain_buffers['RAG'])}/{batch_size})")
+                        batch_to_process = domain_buffers['RAG'][:batch_size]
+                        domain_buffers['RAG'] = domain_buffers['RAG'][batch_size:]
+                        process_batch('RAG', batch_to_process)
+                    else:
+                        print(f"[{idx}/{total_items}] {qid} → RAG buffer ({len(domain_buffers['RAG'])}/{batch_size})")
                 else:
-                    print(f"[{idx}/{total_items}] {qid} → RAG buffer ({len(domain_buffers['RAG'])}/{batch_size})")
+                    # Single mode: process immediately
+                    print(f"[{idx}/{total_items}] {qid} → RAG (SINGLE)...", end=' ')
+                    item_start = time.time()
+                    try:
+                        answer = solve_question(item)
+                        item_end = time.time()
+                        item_time = item_end - item_start
+                        
+                        submission_writer.writerow([qid, answer])
+                        timing_writer.writerow([qid, answer, round(item_time, 4)])
+                        processed_count += 1
+                        submission_file.flush()
+                        timing_file.flush()
+                        print(f"✓ ({item_time:.4f}s)")
+                    except Exception as e:
+                        print(f"✗ Error: {e}")
+                        item_end = time.time()
+                        submission_writer.writerow([qid, 'A'])
+                        timing_writer.writerow([qid, 'A', round(item_end - item_start, 4)])
+                        processed_count += 1
+                        submission_file.flush()
+                        timing_file.flush()
+                
                 continue
             
             # Step 2: Non-RAG question - add to classification buffer
@@ -770,7 +823,7 @@ def predict_with_timing(test_data, output_submission, output_timing):
                         print(f"    {classified_item['qid']} → {classified_domain} (LLM classify) → Processing single...", end=' ')
                         try:
                             start_time = time.time()
-                            answer = solve_question(classified_item)
+                            answer = solve_question(classified_item, pre_classified_domain=classified_domain)
                             end_time = time.time()
                             inference_time = end_time - start_time
                             
@@ -827,7 +880,7 @@ def predict_with_timing(test_data, output_submission, output_timing):
                     print(f"  {classified_item['qid']} → {classified_domain} (LLM classify) → Processing single...", end=' ')
                     try:
                         start_time = time.time()
-                        answer = solve_question(classified_item)
+                        answer = solve_question(classified_item, pre_classified_domain=classified_domain)
                         end_time = time.time()
                         inference_time = end_time - start_time
                         
@@ -867,6 +920,46 @@ def predict_with_timing(test_data, output_submission, output_timing):
     finally:
         submission_file.close()
         timing_file.close()
+        
+        # Sort both output files by qid
+        print(f"\nSorting output files by question ID...")
+        
+        def get_sort_key(row):
+            qid = row[0]
+            try:
+                return int(qid.split('_')[1])
+            except:
+                return 0
+        
+        # Sort submission.csv
+        try:
+            with open(output_submission, 'r', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                header = next(reader)
+                data_rows = list(reader)
+            data_rows.sort(key=get_sort_key)
+            with open(output_submission, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(header)
+                writer.writerows(data_rows)
+            print(f"✓ submission.csv sorted")
+        except Exception as e:
+            print(f"⚠ Could not sort submission.csv: {e}")
+        
+        # Sort submission_time.csv
+        try:
+            with open(output_timing, 'r', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                header = next(reader)
+                data_rows = list(reader)
+            data_rows.sort(key=get_sort_key)
+            with open(output_timing, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(header)
+                writer.writerows(data_rows)
+            print(f"✓ submission_time.csv sorted")
+        except Exception as e:
+            print(f"⚠ Could not sort submission_time.csv: {e}")
 
 
 def main():

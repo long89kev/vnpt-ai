@@ -81,10 +81,14 @@ class QuestionRouter:
         )
         
         # Check if there's a rejection choice
-        has_rejection_choice = any(
-            any(reject_word in choice.lower() for reject_word in self.rejection_keywords)
-            for choice in choices
-        )
+        has_rejection_choice = False
+        if choices:
+            for choice in choices:
+                # Handle both dict format (with 'text' key) and string format
+                choice_text = choice['text'] if isinstance(choice, dict) else choice
+                if any(reject_word in choice_text.lower() for reject_word in self.rejection_keywords):
+                    has_rejection_choice = True
+                    break
         
         return has_harmful_intent and has_rejection_choice
     
@@ -105,7 +109,12 @@ class QuestionRouter:
         
         # Check for trigonometry terms in choices (strong indicator)
         if choices:
-            choices_text = ' '.join(choices).lower()
+            # Handle both dict and string format
+            choices_texts = []
+            for choice in choices:
+                choice_text = choice['text'] if isinstance(choice, dict) else choice
+                choices_texts.append(choice_text)
+            choices_text = ' '.join(choices_texts).lower()
             trig_count = sum(
                 1 for term in self.trig_terms
                 if term.lower() in choices_text

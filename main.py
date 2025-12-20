@@ -47,14 +47,32 @@ def classify_questions_with_llm(questions_batch):
     if not questions_batch:
         return {}
     
-    # Format questions for prompt
+    # Format questions for prompt (with choices)
     questions_list = []
     for i, item in enumerate(questions_batch, 1):
         question_text = item['question']
         # Truncate very long questions to save tokens
         if len(question_text) > 500:
             question_text = question_text[:500] + "..."
-        questions_list.append(f"Câu {i}: {question_text}")
+        
+        # Add choices if available
+        choices_text = ""
+        if 'choices' in item and item['choices']:
+            choices_formatted = []
+            labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
+            for idx, choice in enumerate(item['choices']):
+                # Handle both dict format {'label': 'A', 'text': '...'} and string format
+                if isinstance(choice, dict):
+                    label = choice.get('label', labels[idx])
+                    text = choice.get('text', '')
+                    choices_formatted.append(f"{label}. {text}")
+                else:
+                    # Production format: array of strings
+                    choices_formatted.append(f"{labels[idx]}. {choice}")
+            choices_text = "\n".join(choices_formatted)
+            questions_list.append(f"Câu {i}: {question_text}\n{choices_text}")
+        else:
+            questions_list.append(f"Câu {i}: {question_text}")
     
     questions_str = "\n\n".join(questions_list)
     
@@ -712,18 +730,12 @@ def solve_batch_streaming(items, output_file):
         print(f"\n{'='*80}")
         print(f"✓ Completed: {processed_count}/{total_items} questions processed")
         
-        # Sort output file by qid
-        print(f"\nSorting output file by question ID...")
+        # Sort output files by qid
+        print(f"\nSorting output files by question ID...")
         try:
             csv_file.close()  # Close first before reading
             
-            # Read all data
-            with open(output_file, 'r', encoding='utf-8') as f:
-                reader = csv.reader(f)
-                header = next(reader)
-                data_rows = list(reader)
-            
-            # Sort by qid (extract number from test_XXXX)
+            # Sort function
             def get_sort_key(row):
                 qid = row[0]
                 # Extract number from qid like "test_0001" -> 1
@@ -732,17 +744,20 @@ def solve_batch_streaming(items, output_file):
                 except:
                     return 0
             
+            # Sort submission.csv
+            with open(output_file, 'r', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                header = next(reader)
+                data_rows = list(reader)
             data_rows.sort(key=get_sort_key)
-            
-            # Write back sorted data
             with open(output_file, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow(header)
                 writer.writerows(data_rows)
             
-            print(f"✓ Output file sorted successfully")
+            print(f"✓ submission.csv sorted successfully")
         except Exception as e:
-            print(f"⚠ Warning: Could not sort output file: {e}")
+            print(f"⚠ Warning: Could not sort submission.csv: {e}")
         
     except KeyboardInterrupt:
         print(f"\n\n⚠ Interrupted by user!")
@@ -910,12 +925,33 @@ def solve_batch_streaming_llm(items, output_file):
             
             # Step 1: Quick RAG detection
             if is_rag_question(question_text):
-                # RAG question - add to RAG buffer directly
-                domain_buffers['RAG'].append(item)
+                # RAG question detected
                 rag_detected += 1
                 
-                # Process RAG buffer if full
-                process_domain_buffer('RAG')
+                # Check if RAG uses batch processing
+                rag_config = DOMAIN_CONFIGS.get('RAG', {})
+                use_batch = rag_config.get('use_batch_processing', True)
+                
+                if use_batch:
+                    # Add to buffer and process when full
+                    domain_buffers['RAG'].append(item)
+                    process_domain_buffer('RAG')
+                else:
+                    # Process single immediately
+                    print(f"[{idx}/{total_items}] {qid} → RAG (SINGLE)...", end=' ')
+                    try:
+                        answer = solve_single_question(item, 'RAG')
+                        writer.writerow([qid, answer])
+                        processed_qids.add(qid)
+                        processed_count += 1
+                        csv_file.flush()
+                        print(f"✓ | Total: {processed_count}/{total_items}")
+                    except Exception as e:
+                        print(f"✗ Error: {e}")
+                        writer.writerow([qid, 'A'])
+                        processed_qids.add(qid)
+                        processed_count += 1
+                        csv_file.flush()
             else:
                 # Non-RAG question - add to classification buffer
                 non_rag_buffer.append(item)
@@ -931,12 +967,36 @@ def solve_batch_streaming_llm(items, output_file):
                     
                     non_rag_classified += len(batch_to_classify)
                     
-                    # Step 3: Add to domain buffers
+                    # Step 3: Add to domain buffers OR process single immediately
                     for item_to_classify in batch_to_classify:
                         domain = classifications.get(item_to_classify['qid'], 'MULTIDOMAIN')
-                        domain_buffers[domain].append(item_to_classify)
+                        classified_qid = item_to_classify['qid']
+                        
+                        # Check if domain uses batch processing
+                        domain_config = DOMAIN_CONFIGS.get(domain, {})
+                        use_batch = domain_config.get('use_batch_processing', True)
+                        
+                        if use_batch:
+                            # Add to buffer for batch processing
+                            domain_buffers[domain].append(item_to_classify)
+                        else:
+                            # Process single immediately
+                            print(f"  → {classified_qid} classified as {domain} (SINGLE)...", end=' ')
+                            try:
+                                answer = solve_single_question(item_to_classify, domain)
+                                writer.writerow([classified_qid, answer])
+                                processed_qids.add(classified_qid)
+                                processed_count += 1
+                                csv_file.flush()
+                                print(f"✓")
+                            except Exception as e:
+                                print(f"✗ Error: {e}")
+                                writer.writerow([classified_qid, 'A'])
+                                processed_qids.add(classified_qid)
+                                processed_count += 1
+                                csv_file.flush()
                     
-                    # Step 4: Process domain buffers that are full
+                    # Step 4: Process domain buffers that are full (batch domains only)
                     for domain in domain_buffers.keys():
                         process_domain_buffer(domain)
         
@@ -948,9 +1008,34 @@ def solve_batch_streaming_llm(items, output_file):
             
             non_rag_classified += len(non_rag_buffer)
             
+            # Process each classified question
             for item_to_classify in non_rag_buffer:
                 domain = classifications.get(item_to_classify['qid'], 'MULTIDOMAIN')
-                domain_buffers[domain].append(item_to_classify)
+                classified_qid = item_to_classify['qid']
+                
+                # Check if domain uses batch processing
+                domain_config = DOMAIN_CONFIGS.get(domain, {})
+                use_batch = domain_config.get('use_batch_processing', True)
+                
+                if use_batch:
+                    # Add to buffer for batch processing
+                    domain_buffers[domain].append(item_to_classify)
+                else:
+                    # Process single immediately
+                    print(f"  → {classified_qid} classified as {domain} (SINGLE)...", end=' ')
+                    try:
+                        answer = solve_single_question(item_to_classify, domain)
+                        writer.writerow([classified_qid, answer])
+                        processed_qids.add(classified_qid)
+                        processed_count += 1
+                        csv_file.flush()
+                        print(f"✓")
+                    except Exception as e:
+                        print(f"✗ Error: {e}")
+                        writer.writerow([classified_qid, 'A'])
+                        processed_qids.add(classified_qid)
+                        processed_count += 1
+                        csv_file.flush()
         
         # Step 5: Flush remaining domain buffers
         print(f"\n{'='*80}")
